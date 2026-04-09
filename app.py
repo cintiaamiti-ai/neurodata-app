@@ -1,5 +1,29 @@
 import streamlit as st
 import pandas as pd
+# ===============================
+# LOGIN SIMPLES
+# ===============================
+
+def check_login():
+    if "logged" not in st.session_state:
+        st.session_state["logged"] = False
+
+    if not st.session_state["logged"]:
+        st.title("🔐 Login")
+
+        user = st.text_input("Usuário")
+        password = st.text_input("Senha", type="password")
+
+        if st.button("Entrar"):
+            if user == "admin" and password == "1234":
+                st.session_state["logged"] = True
+                st.rerun()
+            else:
+                st.error("Usuário ou senha incorretos")
+
+        st.stop()
+
+check_login()
 import sqlite3
 from datetime import date
 from dateutil.relativedelta import relativedelta
