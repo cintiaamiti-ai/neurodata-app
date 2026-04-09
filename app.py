@@ -130,7 +130,9 @@ elif aba == "Avaliação":
 instrumento = st.selectbox("Instrumento", ["SRS-2", "ASQ-3", "Raven", "CBCL"])
 
     # SRS-2
-    if instrumento == "SRS-2":
+    if instrumento == "SRS-2": 
+    elif aba == "Avaliação":
+    instrumento = st.selectbox(...)
         respostas = [st.number_input(f"Item {i}", 1, 4, 1, key=f"srs_{i}") for i in range(1,66)]
         bruto = sum([r-1 for r in respostas])
         st.success(f"SRS bruto: {bruto}")
