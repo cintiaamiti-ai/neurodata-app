@@ -1,9 +1,14 @@
 import streamlit as st
 import pandas as pd
-# ===============================
-# LOGIN SIMPLES
-# ===============================
+import sqlite3
+from datetime import date
+from dateutil.relativedelta import relativedelta
 
+st.set_page_config(page_title="NeuroData Research", layout="wide")
+
+# ===============================
+# LOGIN
+# ===============================
 def check_login():
     if "logged" not in st.session_state:
         st.session_state["logged"] = False
@@ -24,16 +29,10 @@ def check_login():
         st.stop()
 
 check_login()
-import sqlite3
-from datetime import date
-from dateutil.relativedelta import relativedelta
-
-st.set_page_config(page_title="NeuroData Research", layout="wide")
 
 # ===============================
-# BANCO SQLITE
+# BANCO
 # ===============================
-
 conn = sqlite3.connect("neurodata.db", check_same_thread=False)
 cursor = conn.cursor()
 
@@ -56,12 +55,14 @@ CREATE TABLE IF NOT EXISTS participantes (
 conn.commit()
 
 # ===============================
-# SESSION STATE
+# SESSION
 # ===============================
-
 if "registro_atual" not in st.session_state:
     st.session_state["registro_atual"] = {}
 
+# ===============================
+# FUNÇÃO ASQ
+# ===============================
 def selecionar_faixa_asq(idade_meses):
     if 33 <= idade_meses <= 39:
         return "36m"
@@ -73,10 +74,10 @@ def selecionar_faixa_asq(idade_meses):
         return "60m"
     else:
         return "fora_da_faixa"
+
 # ===============================
 # INTERFACE
 # ===============================
-
 st.title("🧠 NeuroData - Sistema de Pesquisa")
 
 aba = st.sidebar.radio("Menu", ["Cadastro", "Avaliação", "Dataset"])
@@ -84,13 +85,11 @@ aba = st.sidebar.radio("Menu", ["Cadastro", "Avaliação", "Dataset"])
 # ===============================
 # CADASTRO
 # ===============================
-
 if aba == "Cadastro":
 
     nome = st.text_input("ID Participante")
     sexo = st.selectbox("Sexo", ["Masculino", "Feminino"])
     nasc = st.date_input("Data de nascimento")
-
     tempo = st.selectbox("Momento", ["baseline", "36m", "48m", "52m", "60m"])
 
     if not nome:
@@ -121,7 +120,6 @@ if aba == "Cadastro":
 # ===============================
 # AVALIAÇÃO
 # ===============================
-
 elif aba == "Avaliação":
 
     if not st.session_state["registro_atual"]:
@@ -130,9 +128,7 @@ elif aba == "Avaliação":
 
     instrumento = st.selectbox("Instrumento", ["SRS-2", "ASQ-3", "Raven", "CBCL"])
 
-    # ===============================
     # SRS-2
-    # ===============================
     if instrumento == "SRS-2":
 
         respostas = [st.number_input(f"Item {i}", 1, 4, 1, key=f"srs_{i}") for i in range(1,66)]
@@ -143,9 +139,7 @@ elif aba == "Avaliação":
         if st.button("Salvar SRS"):
             st.session_state["registro_atual"]["srs_bruto"] = bruto
 
-    # ===============================
     # ASQ-3
-    # ===============================
     elif instrumento == "ASQ-3":
 
         faixa_asq = selecionar_faixa_asq(st.session_state["registro_atual"]["idade_meses"])
@@ -173,9 +167,7 @@ elif aba == "Avaliação":
                 "asq_soc": resultados["Social"]
             })
 
-    # ===============================
-    # RAVEN
-    # ===============================
+    # Raven
     elif instrumento == "Raven":
 
         acertos = st.number_input("Acertos", 0, 36, 0)
@@ -183,9 +175,7 @@ elif aba == "Avaliação":
         if st.button("Salvar Raven"):
             st.session_state["registro_atual"]["raven_bruto"] = acertos
 
-    # ===============================
     # CBCL
-    # ===============================
     elif instrumento == "CBCL":
 
         total = st.number_input("Total CBCL")
@@ -195,9 +185,7 @@ elif aba == "Avaliação":
 
     st.json(st.session_state["registro_atual"])
 
-    # ===============================
     # FINALIZAR
-    # ===============================
     if st.button("Finalizar Participante"):
 
         r = st.session_state["registro_atual"]
@@ -209,7 +197,7 @@ elif aba == "Avaliação":
         df_ids = pd.read_sql_query("SELECT id, tempo FROM participantes", conn)
 
         if ((df_ids["id"] == r["id"]) & (df_ids["tempo"] == r["tempo"])).any():
-            st.error("Registro já existe para esse participante nesse tempo")
+            st.error("Registro duplicado")
             st.stop()
 
         cursor.execute("""
@@ -220,10 +208,10 @@ elif aba == "Avaliação":
 
         st.session_state["registro_atual"] = {}
         st.success("Participante salvo")
+
 # ===============================
 # DATASET
 # ===============================
-
 elif aba == "Dataset":
 
     df = pd.read_sql_query("SELECT * FROM participantes", conn)
