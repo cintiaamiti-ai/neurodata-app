@@ -127,34 +127,39 @@ elif aba == "Avaliação":
     if not st.session_state["registro_atual"]:
         st.warning("Cadastre primeiro")
         st.stop()
-instrumento = st.selectbox("Instrumento", ["SRS-2", "ASQ-3", "Raven", "CBCL"])
 
+    instrumento = st.selectbox("Instrumento", ["SRS-2", "ASQ-3", "Raven", "CBCL"])
+
+    # ===============================
     # SRS-2
-    if instrumento == "SRS-2": 
-    elif aba == "Avaliação":
-    instrumento = st.selectbox(...)
+    # ===============================
+    if instrumento == "SRS-2":
+
         respostas = [st.number_input(f"Item {i}", 1, 4, 1, key=f"srs_{i}") for i in range(1,66)]
         bruto = sum([r-1 for r in respostas])
+
         st.success(f"SRS bruto: {bruto}")
 
         if st.button("Salvar SRS"):
             st.session_state["registro_atual"]["srs_bruto"] = bruto
 
+    # ===============================
     # ASQ-3
-  elif instrumento == "ASQ-3":
+    # ===============================
+    elif instrumento == "ASQ-3":
 
-    faixa_asq = selecionar_faixa_asq(st.session_state["registro_atual"]["idade_meses"])
+        faixa_asq = selecionar_faixa_asq(st.session_state["registro_atual"]["idade_meses"])
+        st.info(f"📊 ASQ correspondente: {faixa_asq}")
 
-    st.info(f"📊 ASQ correspondente: {faixa_asq}")
+        doms = ["Comunicação","Motor Grosso","Motor Fino","Resolução","Social"]
+        resultados = {}
 
-    doms = ["Comunicação","Motor Grosso","Motor Fino","Resolução","Social"]
-    resultados = {}
-
-    for d in doms:
-        total = 0
+        for d in doms:
+            total = 0
             with st.expander(d):
                 for i in range(1,7):
                     total += st.radio(f"{d}-{i}", [10,5,0], key=f"{d}_{i}")
+
             resultados[d] = total
 
         st.write(resultados)
@@ -168,32 +173,41 @@ instrumento = st.selectbox("Instrumento", ["SRS-2", "ASQ-3", "Raven", "CBCL"])
                 "asq_soc": resultados["Social"]
             })
 
-    # Raven
+    # ===============================
+    # RAVEN
+    # ===============================
     elif instrumento == "Raven":
+
         acertos = st.number_input("Acertos", 0, 36, 0)
+
         if st.button("Salvar Raven"):
             st.session_state["registro_atual"]["raven_bruto"] = acertos
 
+    # ===============================
     # CBCL
+    # ===============================
     elif instrumento == "CBCL":
+
         total = st.number_input("Total CBCL")
+
         if st.button("Salvar CBCL"):
             st.session_state["registro_atual"]["cbcl_total"] = total
 
     st.json(st.session_state["registro_atual"])
 
-    # FINALIZAR PARTICIPANTE
+    # ===============================
+    # FINALIZAR
+    # ===============================
     if st.button("Finalizar Participante"):
 
         r = st.session_state["registro_atual"]
 
-        # validação
         if None in r.values():
             st.error("Preencha TODOS os instrumentos")
             st.stop()
 
-        # evitar duplicação
         df_ids = pd.read_sql_query("SELECT id, tempo FROM participantes", conn)
+
         if ((df_ids["id"] == r["id"]) & (df_ids["tempo"] == r["tempo"])).any():
             st.error("Registro já existe para esse participante nesse tempo")
             st.stop()
@@ -206,7 +220,6 @@ instrumento = st.selectbox("Instrumento", ["SRS-2", "ASQ-3", "Raven", "CBCL"])
 
         st.session_state["registro_atual"] = {}
         st.success("Participante salvo")
-
 # ===============================
 # DATASET
 # ===============================
