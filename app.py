@@ -62,6 +62,17 @@ conn.commit()
 if "registro_atual" not in st.session_state:
     st.session_state["registro_atual"] = {}
 
+def selecionar_faixa_asq(idade_meses):
+    if 33 <= idade_meses <= 39:
+        return "36m"
+    elif 45 <= idade_meses <= 51:
+        return "48m"
+    elif 51 <= idade_meses <= 57:
+        return "54m"
+    elif 57 <= idade_meses <= 66:
+        return "60m"
+    else:
+        return "fora_da_faixa"
 # ===============================
 # INTERFACE
 # ===============================
@@ -77,7 +88,7 @@ aba = st.sidebar.radio("Menu", ["Cadastro", "Avaliação", "Dataset"])
 if aba == "Cadastro":
 
     nome = st.text_input("ID Participante")
-    tempo = st.selectbox("Momento", ["baseline", "followup1", "followup2"])
+   tempo = st.selectbox("Momento", ["baseline", "36m", "48m", "52m", "60m"])
     sexo = st.selectbox("Sexo", ["Masculino", "Feminino"])
     nasc = st.date_input("Nascimento", date(2020,1,1))
 
@@ -128,12 +139,17 @@ elif aba == "Avaliação":
             st.session_state["registro_atual"]["srs_bruto"] = bruto
 
     # ASQ-3
-    elif instrumento == "ASQ-3":
-        doms = ["Comunicação","Motor Grosso","Motor Fino","Resolução","Social"]
-        resultados = {}
+  elif instrumento == "ASQ-3":
 
-        for d in doms:
-            total = 0
+    faixa_asq = selecionar_faixa_asq(st.session_state["registro_atual"]["idade_meses"])
+
+    st.info(f"📊 ASQ correspondente: {faixa_asq}")
+
+    doms = ["Comunicação","Motor Grosso","Motor Fino","Resolução","Social"]
+    resultados = {}
+
+    for d in doms:
+        total = 0
             with st.expander(d):
                 for i in range(1,7):
                     total += st.radio(f"{d}-{i}", [10,5,0], key=f"{d}_{i}")
