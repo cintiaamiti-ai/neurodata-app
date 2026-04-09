@@ -88,9 +88,10 @@ aba = st.sidebar.radio("Menu", ["Cadastro", "Avaliação", "Dataset"])
 if aba == "Cadastro":
 
     nome = st.text_input("ID Participante")
-   tempo = st.selectbox("Momento", ["baseline", "36m", "48m", "52m", "60m"])
     sexo = st.selectbox("Sexo", ["Masculino", "Feminino"])
-    nasc = st.date_input("Nascimento", date(2020,1,1))
+    nasc = st.date_input("Data de nascimento")
+
+    tempo = st.selectbox("Momento", ["baseline", "36m", "48m", "52m", "60m"])
 
     if not nome:
         st.warning("Digite um ID válido")
@@ -126,8 +127,7 @@ elif aba == "Avaliação":
     if not st.session_state["registro_atual"]:
         st.warning("Cadastre primeiro")
         st.stop()
-
-    instrumento = st.selectbox("Instrumento", ["SRS-2", "ASQ-3", "Raven", "CBCL"])
+instrumento = st.selectbox("Instrumento", ["SRS-2", "ASQ-3", "Raven", "CBCL"])
 
     # SRS-2
     if instrumento == "SRS-2":
