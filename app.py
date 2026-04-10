@@ -1,226 +1,149 @@
 import streamlit as st
 import pandas as pd
-import sqlite3
-from datetime import date
-from dateutil.relativedelta import relativedelta
 
-st.set_page_config(page_title="NeuroData Research", layout="wide")
+st.set_page_config(page_title="NeuroData", layout="wide")
 
-# ===============================
-# LOGIN
-# ===============================
-def check_login():
-    if "logged" not in st.session_state:
-        st.session_state["logged"] = False
+# =========================
+# ESTADO GLOBAL
+# =========================
 
-    if not st.session_state["logged"]:
-        st.title("🔐 Login")
+if "dados" not in st.session_state:
+    st.session_state["dados"] = []
 
-        user = st.text_input("Usuário")
-        password = st.text_input("Senha", type="password")
+# =========================
+# MENU
+# =========================
 
-        if st.button("Entrar"):
-            if user == "admin" and password == "1234":
-                st.session_state["logged"] = True
-                st.rerun()
-            else:
-                st.error("Usuário ou senha incorretos")
+aba = st.sidebar.selectbox("Menu", ["Cadastro", "Avaliação", "Dataset"])
 
-        st.stop()
-
-check_login()
-
-# ===============================
-# BANCO
-# ===============================
-conn = sqlite3.connect("neurodata.db", check_same_thread=False)
-cursor = conn.cursor()
-
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS participantes (
-    id TEXT,
-    tempo TEXT,
-    idade_meses INTEGER,
-    sexo TEXT,
-    srs_bruto INTEGER,
-    asq_com INTEGER,
-    asq_mg INTEGER,
-    asq_mf INTEGER,
-    asq_res INTEGER,
-    asq_soc INTEGER,
-    raven_bruto INTEGER,
-    cbcl_total INTEGER
-)
-""")
-conn.commit()
-
-# ===============================
-# SESSION
-# ===============================
-if "registro_atual" not in st.session_state:
-    st.session_state["registro_atual"] = {}
-
-# ===============================
-# FUNÇÃO ASQ
-# ===============================
-def selecionar_faixa_asq(idade_meses):
-    if 33 <= idade_meses <= 39:
-        return "36m"
-    elif 45 <= idade_meses <= 51:
-        return "48m"
-    elif 51 <= idade_meses <= 57:
-        return "54m"
-    elif 57 <= idade_meses <= 66:
-        return "60m"
-    else:
-        return "fora_da_faixa"
-
-# ===============================
-# INTERFACE
-# ===============================
-st.title("🧠 NeuroData - Sistema de Pesquisa")
-
-aba = st.sidebar.radio("Menu", ["Cadastro", "Avaliação", "Dataset"])
-
-# ===============================
+# =========================
 # CADASTRO
-# ===============================
+# =========================
+
 if aba == "Cadastro":
 
-    nome = st.text_input("ID Participante")
+    st.title("Cadastro do Participante")
+
+    id_participante = st.text_input("ID Participante")
     sexo = st.selectbox("Sexo", ["Masculino", "Feminino"])
-    nasc = st.date_input("Data de nascimento")
-    tempo = st.selectbox("Momento", ["baseline", "36m", "48m", "52m", "60m"])
+    idade_meses = st.number_input("Idade (meses)", min_value=0, max_value=120)
 
-    if not nome:
-        st.warning("Digite um ID válido")
-        st.stop()
+    if st.button("Salvar Cadastro"):
 
-    idade = relativedelta(date.today(), nasc)
-    idade_meses = idade.years * 12 + idade.months
+        if id_participante == "":
+            st.error("Digite um ID válido")
+        else:
+            st.session_state["id"] = id_participante
+            st.session_state["sexo"] = sexo
+            st.session_state["idade_meses"] = idade_meses
 
-    st.session_state["registro_atual"] = {
-        "id": nome,
-        "tempo": tempo,
-        "idade_meses": idade_meses,
-        "sexo": sexo,
-        "srs_bruto": None,
-        "asq_com": None,
-        "asq_mg": None,
-        "asq_mf": None,
-        "asq_res": None,
-        "asq_soc": None,
-        "raven_bruto": None,
-        "cbcl_total": None
-    }
+            st.success("Cadastro salvo!")
 
-    st.success("Cadastro iniciado")
-    st.json(st.session_state["registro_atual"])
-
-# ===============================
+# =========================
 # AVALIAÇÃO
-# ===============================
+# =========================
+
 elif aba == "Avaliação":
 
-    if not st.session_state["registro_atual"]:
-        st.warning("Cadastre primeiro")
+    st.title("Avaliação")
+
+    if "id" not in st.session_state:
+        st.warning("Faça o cadastro primeiro")
         st.stop()
 
-    instrumento = st.selectbox("Instrumento", ["SRS-2", "ASQ-3", "Raven", "CBCL"])
+    st.write(f"Participante: {st.session_state['id']}")
 
-    # SRS-2
-    if instrumento == "SRS-2":
+    idade_meses = st.session_state.get("idade_meses", 0)
 
-        respostas = [st.number_input(f"Item {i}", 1, 4, 1, key=f"srs_{i}") for i in range(1,66)]
-        bruto = sum([r-1 for r in respostas])
+    # =========================
+    # ASQ-SE
+    # =========================
 
-        st.success(f"SRS bruto: {bruto}")
+    st.subheader("ASQ-SE (Socioemocional)")
 
-        if st.button("Salvar SRS"):
-            st.session_state["registro_atual"]["srs_bruto"] = bruto
+    # faixa etária
+    if 15 <= idade_meses <= 20:
+        faixa = "18 meses"
+    elif 21 <= idade_meses <= 26:
+        faixa = "24 meses"
+    elif 27 <= idade_meses <= 32:
+        faixa = "30 meses"
+    elif 33 <= idade_meses <= 41:
+        faixa = "36 meses"
+    elif 42 <= idade_meses <= 53:
+        faixa = "48 meses"
+    elif 54 <= idade_meses <= 65:
+        faixa = "60 meses"
+    else:
+        faixa = "Fora da faixa"
 
-    # ASQ-3
-    elif instrumento == "ASQ-3":
+    st.write(f"Faixa selecionada: {faixa}")
 
-        faixa_asq = selecionar_faixa_asq(st.session_state["registro_atual"]["idade_meses"])
-        st.info(f"📊 ASQ correspondente: {faixa_asq}")
+    respostas_asq = []
 
-        doms = ["Comunicação","Motor Grosso","Motor Fino","Resolução","Social"]
-        resultados = {}
+    for i in range(1, 11):
+        r = st.selectbox(
+            f"Pergunta {i}",
+            ["Na maioria das vezes", "Às vezes", "Raramente/Nunca"],
+            key=f"asqse_{i}"
+        )
+        respostas_asq.append(r)
 
-        for d in doms:
-            total = 0
-            with st.expander(d):
-                for i in range(1,7):
-                    total += st.radio(f"{d}-{i}", [10,5,0], key=f"{d}_{i}")
+    if st.button("Calcular ASQ-SE"):
 
-            resultados[d] = total
+        score = 0
 
-        st.write(resultados)
+        for r in respostas_asq:
+            if r == "Na maioria das vezes":
+                score += 0
+            elif r == "Às vezes":
+                score += 5
+            else:
+                score += 10
 
-        if st.button("Salvar ASQ"):
-            st.session_state["registro_atual"].update({
-                "asq_com": resultados["Comunicação"],
-                "asq_mg": resultados["Motor Grosso"],
-                "asq_mf": resultados["Motor Fino"],
-                "asq_res": resultados["Resolução"],
-                "asq_soc": resultados["Social"]
-            })
+        st.write(f"Score total: {score}")
 
-    # Raven
-    elif instrumento == "Raven":
+        if score > 60:
+            classificacao = "Risco elevado"
+            st.error(classificacao)
+        elif score > 40:
+            classificacao = "Monitoramento"
+            st.warning(classificacao)
+        else:
+            classificacao = "Adequado"
+            st.success(classificacao)
 
-        acertos = st.number_input("Acertos", 0, 36, 0)
+        # salvar resultado
+        registro = {
+            "id": st.session_state["id"],
+            "sexo": st.session_state["sexo"],
+            "idade_meses": idade_meses,
+            "asq_se_score": score,
+            "asq_se_classificacao": classificacao
+        }
 
-        if st.button("Salvar Raven"):
-            st.session_state["registro_atual"]["raven_bruto"] = acertos
+        st.session_state["dados"].append(registro)
 
-    # CBCL
-    elif instrumento == "CBCL":
+        st.success("Resultado salvo!")
 
-        total = st.number_input("Total CBCL")
-
-        if st.button("Salvar CBCL"):
-            st.session_state["registro_atual"]["cbcl_total"] = total
-
-    st.json(st.session_state["registro_atual"])
-
-    # FINALIZAR
-    if st.button("Finalizar Participante"):
-
-        r = st.session_state["registro_atual"]
-
-        if None in r.values():
-            st.error("Preencha TODOS os instrumentos")
-            st.stop()
-
-        df_ids = pd.read_sql_query("SELECT id, tempo FROM participantes", conn)
-
-        if ((df_ids["id"] == r["id"]) & (df_ids["tempo"] == r["tempo"])).any():
-            st.error("Registro duplicado")
-            st.stop()
-
-        cursor.execute("""
-        INSERT INTO participantes VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
-        """, tuple(r.values()))
-
-        conn.commit()
-
-        st.session_state["registro_atual"] = {}
-        st.success("Participante salvo")
-
-# ===============================
+# =========================
 # DATASET
-# ===============================
+# =========================
+
 elif aba == "Dataset":
 
-    df = pd.read_sql_query("SELECT * FROM participantes", conn)
+    st.title("Dados coletados")
 
-    st.dataframe(df)
+    if len(st.session_state["dados"]) == 0:
+        st.write("Nenhum dado ainda")
+    else:
+        df = pd.DataFrame(st.session_state["dados"])
+        st.dataframe(df)
 
-    st.download_button(
-        "Baixar CSV",
-        df.to_csv(index=False),
-        "dataset.csv",
-        "text/csv"
-    )
+        csv = df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            "Baixar CSV",
+            csv,
+            "dados.csv",
+            "text/csv"
+        )
